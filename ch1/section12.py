@@ -1,3 +1,37 @@
+class GetList:
+    def __init__(self, startlist: list = []):
+        self._list = startlist
+
+    def __getitem__(self, key):
+        return self._list[key]
+
+class BitString(int):
+    def __new__(cls, value: int = 0) -> None:
+        return int.__new__(cls, int(value))
+    
+    def __getitem__(self, key: int) -> str:
+        value_bit_string: str = format(self, "b")
+        return value_bit_string[key]
+
+    def __repr__(self) -> str:
+        return repr(format(self, "b"))
+
+def test_BitString_get_5():
+    test_int = 127
+    test_ix = 5
+    expected_value = "1"
+    bit = BitString(test_int)
+    assert bit[test_ix] == "1"
+    
+def test_BitString_get_slice():
+    test_int = 107
+    slice_start = 1
+    slice_end = 4
+    expected_value = "101"
+    bit = BitString(test_int)
+    assert bit[slice_start:slice_end] == expected_value
+
+
 class CompressedGene:
     def __init__(self, gene: str) -> None:
         self._compress(gene)
