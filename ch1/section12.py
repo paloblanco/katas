@@ -1,3 +1,5 @@
+from typing import Union
+
 class GetList:
     def __init__(self, startlist: list = []):
         self._list = startlist
@@ -6,8 +8,15 @@ class GetList:
         return self._list[key]
 
 class BitString(int):
-    def __new__(cls, value: int = 0) -> None:
-        return int.__new__(cls, int(value))
+    def __new__(cls, value: Union[int,str] = 0) -> None:
+        if type(value) == int:
+            return int.__new__(cls, int(value))
+        elif type(value) == str:
+            try:
+                int_val = int(value,2)
+                return int.__new__(cls, int(int_val))
+            except ValueError:
+                print("String must be sequence of 0 and 1, ie '0101'")
     
     def __getitem__(self, key: int) -> str:
         value_bit_string: str = format(self, "b")
@@ -15,6 +24,26 @@ class BitString(int):
 
     def __repr__(self) -> str:
         return repr(format(self, "b"))
+
+    def append_bit_string(self, value: str) -> str:   
+        try:
+            int_new_value = int(value,2)
+            length_bits = int_new_value.bit_length()
+            value_new_int = int(value_new_string,2)
+            self = int.__new__(BitString, int(value_new_int))
+            return format(self, "b")
+        except ValueError:
+            print("String must be sequence of 0 and 1, ie '0101'")
+
+
+def test_BitString_append_val():
+    test_int = 107
+    test_string_old = '1101011'
+    test_val = "01"
+    new_val = 429
+    bit = BitString(test_int)
+    assert bit.append_bit_string(test_val) == test_string_old+test_val
+    assert bit + 0 == new_val
 
 def test_BitString_get_5():
     test_int = 127
