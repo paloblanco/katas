@@ -8,7 +8,7 @@ def linear_contains(iterable: Iterable[T], key: T) -> bool:
     for item in iterable:
         if item == key:
             return True
-        return False
+    return False
 
 C = TypeVar("C", bound="Comparable")
 
