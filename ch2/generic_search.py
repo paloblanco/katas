@@ -42,6 +42,24 @@ def binary_contains(sequence: Sequence[C], key: C) -> bool:
             return True
     return False
 
+class Stack(Generic[T]):
+    def __init__(self):
+        self._container: List[T] = []
+
+    @property
+    def empty(self) -> bool:
+        return not self._container
+
+    def push(self, item: T) -> None:
+        self._container.append(item)
+
+    def pop(self) -> T:
+        return self._container.pop()
+
+    def __repr__(self) -> str:
+        return repr(self._container)
+  
+
 def test_linear_contains():
     assert linear_contains([1,5,15,15,15,15,20],5), f"Should be true"
 
