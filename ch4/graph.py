@@ -1,6 +1,7 @@
 from typing import TypeVar, Generic, List, Optional
 from edge import Edge
 
+
 V = TypeVar('V') # type of the vertices in the graph
 
 class Graph(Generic[V]):
@@ -58,6 +59,7 @@ class Graph(Generic[V]):
             desc += f"{self.vertex_at(i)} -> {self.neighbors_for_index(i)}\n"
         return desc
 
+
 if __name__ == "__main__":
     list_cities = [
         "Seattle",
@@ -104,3 +106,16 @@ if __name__ == "__main__":
     city_graph.add_edge_by_vertices("New York", "Philadelphia")
     city_graph.add_edge_by_vertices("Philadelphia", "Washington")
     print(city_graph)
+
+    import sys
+    sys.path.insert(0,r"C:/src/class/ClassicProblems/ch2")
+    from generic_search import bfs, Node, node_to_path
+
+    bfs_result: Optional[Node[V]] = bfs("Boston",lambda x: x=="Miami", city_graph.neighbors_for_vertex)
+
+    if bfs_result is None:
+        print("No solution")
+    else:
+        path: List[V] = node_to_path(bfs_result)
+        print("Path from Boston to Miami")
+        print(path)
