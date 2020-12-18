@@ -62,30 +62,6 @@ class Graph24():
         node = Node(value,weight,left,right,operator,roots)
         self.nodes[weight][roots].append(node)
 
-    def build_old(self):
-        operations = [
-            self._make_nodes_adding,
-            self._make_nodes_subtracting,
-            self._make_nodes_multiplying,
-            self._make_nodes_dividing
-        ]
-        # make all level 2s
-        for op in operations:
-            op(1,1)
-        # all level 3s:
-        for op in operations:
-            op(2,1)
-            op(1,2)
-        # all 2x2s
-        for op in operations:
-            op(2,2)
-        #all 3x1s
-        for op in operations:
-            op(3,1)
-            op(1,3)
-        
-        return self.fetch_solution()
-
     def build(self):
         operations = [
             self._make_nodes_adding_explicit,
@@ -162,34 +138,6 @@ class Graph24():
     
     def _make_nodes_adding_explicit(self,left_nodes,right_nodes,roots):
         self._make_nodes_operation_explicit(left_nodes,right_nodes,lambda x,y: x+y, '+', roots)
-
-    def _make_nodes_operation(self,left_level,right_level,operation,operation_string):
-        left_lookup = self.nodes[left_level]
-        right_lookup = self.nodes[right_level]
-        weight = left_level+right_level
-        for left_roots,left_nodes in left_lookup.items():
-            for right_roots,right_nodes in right_lookup.items():
-                if len(set(left_roots).intersection(set(right_roots))) == 0:
-                    roots = ''.join(sorted(left_roots+right_roots))
-                    for left_node in left_nodes:
-                        for right_node in right_nodes:
-                            try:
-                                value = operation(left_node.value, right_node.value)
-                                self.add_node(value,weight,left_node,right_node,operation_string,roots)
-                            except:
-                                pass
-    
-    def _make_nodes_subtracting(self,left_level,right_level):
-        self._make_nodes_operation(left_level,right_level,lambda x,y: x-y, '-')
-
-    def _make_nodes_dividing(self,left_level,right_level):
-        self._make_nodes_operation(left_level,right_level,lambda x,y: x/y, '/')
-    
-    def _make_nodes_multiplying(self,left_level,right_level):
-        self._make_nodes_operation(left_level,right_level,lambda x,y: x*y, '*')
-    
-    def _make_nodes_adding(self,left_level,right_level):
-        self._make_nodes_operation(left_level,right_level,lambda x,y: x+y, '+')
 
 
 class Node():
