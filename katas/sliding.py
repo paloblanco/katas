@@ -33,21 +33,29 @@ If you enjoyed this kata, be sure to check out my other katas.
 
 from heapq import heappop, heappush
 from copy import deepcopy
+import time
 
-def make_scorer(ar):
+def make_scorer(ar,kind="all",ix=0):
+    # kind can be "row","column","all"
+    # if not "all", only score the indicated row/column by ix
     n = len(ar[0]) # assume ar is valid
     coordinates = [(i,j) for i in range(n) for j in range(n)][:-1]
     locations = {n+1:coordinates[n] for n in range(len(coordinates))}
+    locations_flip = {v:k for k,v in locations.items()}
+    if kind == "row":
+        coordinates = [(ix,j) for j in range(n)]
+        locations = {locations_flip[(ni,nj)]:(ni,nj) for ni,nj in coordinates}
+    if kind == "column":
+        coordinates = [(i,ix) for i in range(n)]
+        locations = {locations_flip[(ni,nj)]:(ni,nj) for ni,nj in coordinates}
     def scorer(arg):
         score = 0
         for i in range(n):
             for j in range(n):
                 number = arg[i][j]
-                if number > 0:
+                if number in locations:
                     row, col = locations[number]
                     score += abs(i-row) + abs(j-col)
-                    # if abs(i-row) + abs(j-col) > 0:
-                    #     score += 1
         return 2*score
     return scorer
 
@@ -114,11 +122,12 @@ class Node(): #holds a state of the puzzle
 
 
 class Puzzle(): #holds the puzzle initial state and all nodes, scores and makes new nodes
-    def __init__(self, ar):
+    def __init__(self, ar, kind="all", ix=0):
         self.nodes = [] #PQueue()
         self._initial_state = ar
-        self._scorer = make_scorer(ar)
+        self._scorer = make_scorer(ar, kind=kind, ix=ix)
         self.make_node(ar,0)
+        self.size = len(ar)
 
     def make_node(self, config, cost, parent=None, mymove=None):
         score = self._scorer(config)
@@ -146,7 +155,7 @@ class Puzzle(): #holds the puzzle initial state and all nodes, scores and makes 
         return nodes
 
 
-def astar(ar, puzzle: Puzzle):
+def astar(puzzle: Puzzle):
     frontier = PQueue() # where we will search next
     explored = {} # have we searched this node? if so, what is its cost?
     impossible = False # if the cost exceeds n*n, its probably impossible
@@ -158,20 +167,34 @@ def astar(ar, puzzle: Puzzle):
     lowscore = 200
     while (not frontier.empty) and (not impossible):
         current_node: Node = frontier.pop()
-        steps+=1
-        lowscore = min(lowscore, current_node.score)
-        if steps % 1000 == 0:
-            print("Current score: ", lowscore)
-            print(current_node)
-        if current_node.score == 0:
-            print("Steps: ", steps)
-            return current_node.report_sequence_to_me()[1:]
+        if current_node.score == 0:            
+            return current_node.report_sequence_to_me()[1:], current_node.config
         new_nodes = puzzle.get_children(current_node)
         for new_node in new_nodes:
             if (str(new_node.config) not in explored) or (new_node.cost < explored[str(new_node.config)]):
                 explored[str(new_node.config)] = new_node.cost
                 frontier.push(new_node)                
     return None
+
+def solve_slider(ar):
+    # will use astar as a series of steps
+    solution = []
+    nmax = len(ar)
+    n = nmax
+    while n > 2:
+        ix = nmax-n
+        puzzle = Puzzle(ar, kind="row", ix=ix)
+        steps, ar = astar(puzzle)
+        solution = solution + steps
+        puzzle = Puzzle(ar, kind="column", ix=ix)
+        steps, ar = astar(puzzle)
+        solution = solution + steps
+        n = n-1
+    puzzle = Puzzle(ar)
+    steps, ar = astar(puzzle)
+    solution = solution + steps
+    return solution
+    
 
 def astar_race(puzzle: Puzzle, puzzle_bad: Puzzle):
     frontier = PQueue() # where we will search next
@@ -230,14 +253,9 @@ def best_first(ar, puzzle: Puzzle): # must modify __lt__ in Nodes! not ideal, i 
     return None
       
 def slide_puzzle(ar):
-    puzzle = Puzzle(ar)
-    ar_bad = deepcopy(ar)
-    ar_bad00 = ar_bad[0][0]
-    ar_bad01 = ar_bad[0][1]
-    ar_bad[0][0] = ar_bad01
-    ar_bad[0][1] = ar_bad00
-    puzzle_bad = Puzzle(ar_bad)
-    solution = astar_race(puzzle, puzzle_bad)
+    # puzzle = Puzzle(ar)
+    # solution = astar(puzzle)
+    solution = solve_slider(ar)
     # solution = best_first(ar, puzzle)
     return solution
 
@@ -282,12 +300,29 @@ if __name__ == "__main__":
     ]
     n = Node(puzzle1,0,0)
     # print(n,n.get_moves())
-    puz = Puzzle(puzzle1)
+    # puz = Puzzle(puzzle1)
     # print(puz.nodes[0])
-    print(puzzle1,slide_puzzle(puzzle1))
-    print(puzzle2,slide_puzzle(puzzle2))
-    print(puzzle21,slide_puzzle(puzzle21))
-    print(puzzle22,slide_puzzle(puzzle22))
-    print(puzzle3,slide_puzzle(puzzle3))
-    print(puzzle4,slide_puzzle(puzzle4))
+    # print(puzzle1,slide_puzzle(puzzle1))
+    # print(puzzle2,slide_puzzle(puzzle2))
+    # print(puzzle21,slide_puzzle(puzzle21))
+    # print(puzzle22,slide_puzzle(puzzle22))
+    # print(puzzle3,slide_puzzle(puzzle3))
+    # print(puzzle4,slide_puzzle(puzzle4))
+    start = time.time()
+    for puz in [puzzle1,puzzle2,puzzle3,puzzle4]:
+        slide_puzzle(puz)
+    end = time.time()
+    print(f"Time for heuristic = {end-start}")
+    start = time.time()
+    for puz in [puzzle1,puzzle2,puzzle3,puzzle4]:
+        puzzle = Puzzle(puz)
+        astar(puzzle)
+    end = time.time()
+    for puz in [puzzle1,puzzle2,puzzle3,puzzle4]:
+        puzzle = Puzzle(puz)
+        result,_ = astar(puzzle)
+        result2 = slide_puzzle(puz)
+        print(result==result2)
+    
+    print(f"Time for astar = {end-start}")
     
