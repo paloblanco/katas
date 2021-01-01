@@ -35,19 +35,10 @@ from heapq import heappop, heappush
 from copy import deepcopy
 import time
 
-def make_scorer(ar,kind="all",ix=0):
-    # kind can be "row","column","all"
-    # if not "all", only score the indicated row/column by ix
+def make_scorer(ar, ix=100):
     n = len(ar[0]) # assume ar is valid
     coordinates = [(i,j) for i in range(n) for j in range(n)][:-1]
-    locations = {n+1:coordinates[n] for n in range(len(coordinates))}
-    locations_flip = {v:k for k,v in locations.items()}
-    if kind == "row":
-        coordinates = [(ix,j) for j in range(n)]
-        locations = {locations_flip[(ni,nj)]:(ni,nj) for ni,nj in coordinates}
-    if kind == "column":
-        coordinates = [(i,ix) for i in range(n)]
-        locations = {locations_flip[(ni,nj)]:(ni,nj) for ni,nj in coordinates}
+    locations = {n+1:coordinates[n] for n in range(len(coordinates)) if n+1<=ix}
     def scorer(arg):
         score = 0
         for i in range(n):
@@ -87,22 +78,13 @@ class Node(): #holds a state of the puzzle
         self.parent = parent
         self.mymove = mymove
 
-    def get_moves(self):
+    def get_moves(self, movelist):
         for i in range(self.size):
             for j in range(self.size):
                 if self.config[i][j] == 0:
                     i0=i
                     j0=j
-        moves=[]
-        #check up and down
-        icheck = [i for i in [i0-1,i0+1] if (i>=0) and (i<self.size)]
-        for i in icheck:
-            moves.append(self.config[i][j0])
-        #check left and right
-        jcheck = [j for j in [j0-1,j0+1] if (j>=0) and (j<self.size)]
-        for j in jcheck:
-            moves.append(self.config[i0][j])
-        return moves
+        return [self.config[i][j] for i,j in movelist[i0,j0]]
 
     def get_sequence(self):
         yield self.mymove
@@ -122,12 +104,24 @@ class Node(): #holds a state of the puzzle
 
 
 class Puzzle(): #holds the puzzle initial state and all nodes, scores and makes new nodes
-    def __init__(self, ar, kind="all", ix=0):
+    def __init__(self, ar):
         self.nodes = [] #PQueue()
         self._initial_state = ar
-        self._scorer = make_scorer(ar, kind=kind, ix=ix)
-        self.make_node(ar,0)
         self.size = len(ar)
+        self._calculate_moves()
+        self._scorer = make_scorer(ar)
+        self.make_node(ar,0)     
+
+    def _calculate_moves(self):
+        moves_by_location = {}
+        for i in range(self.size):
+            for j in range(self.size):
+                moves = []
+                imoves = [ii for ii in [i-1,i+1] if ((ii >= 0) and (ii < self.size))]
+                jmoves = [jj for jj in [j-1,j+1] if ((jj >= 0) and (jj < self.size))]
+                moves = moves + [(i,jj) for jj in jmoves] + [(ii,j) for ii in imoves]
+                moves_by_location[i,j] = moves
+        self.moves = moves_by_location
 
     def make_node(self, config, cost, parent=None, mymove=None):
         score = self._scorer(config)
@@ -138,7 +132,7 @@ class Puzzle(): #holds the puzzle initial state and all nodes, scores and makes 
     def get_children(self, node):
         if node.children:
             return node.children
-        moves = node.get_moves()
+        moves = node.get_moves(self.moves)
         ar = node.config
         nodes = []
         for move in moves:
@@ -178,21 +172,8 @@ def astar(puzzle: Puzzle):
 
 def solve_slider(ar):
     # will use astar as a series of steps
-    solution = []
-    nmax = len(ar)
-    n = nmax
-    while n > 2:
-        ix = nmax-n
-        puzzle = Puzzle(ar, kind="row", ix=ix)
-        steps, ar = astar(puzzle)
-        solution = solution + steps
-        puzzle = Puzzle(ar, kind="column", ix=ix)
-        steps, ar = astar(puzzle)
-        solution = solution + steps
-        n = n-1
     puzzle = Puzzle(ar)
-    steps, ar = astar(puzzle)
-    solution = solution + steps
+    solution,_ = astar(puzzle)
     return solution
     
 
