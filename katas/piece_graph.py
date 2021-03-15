@@ -12,10 +12,31 @@ class Node():
             3: None, #up, row - 1
         }
 
+    def __str__(self):
+        str_node = ""
+        for _,neighbor in self.neighbors.items():
+            if neighbor:
+                str_node += f"({neighbor[0].row}, {neighbor[0].column})  "
+        val = f"({self.row}, {self.column}), neighbors are {str_node}"
+        return val
+
+    def __repr__(self):
+        return self.__str__()
+
     def add_neighbor(self, other, direction, distance):
         self.neighbors[direction] = (other, distance)
         back_direction = (direction + 2)%4
         other.neighbors[back_direction] = (self, distance)
+
+    def get_next(self, direction):
+        neighbor = self.neighbors[direction]
+        while not neighbor:
+            direction = (direction - 1)%4
+            neighbor = self.neighbors[direction]
+        return neighbor[0], direction
+
+    def get_frontier(self, direction):
+        pass
 
 
 class ShapeGraph():
@@ -24,6 +45,35 @@ class ShapeGraph():
         self.mapp = self.str_to_map(shape)
         self.build_graph()
 
+    def build_shapes(self):
+        self.shapes = []
+        remaining_nodes = list(self.nodes.values())
+        frontier = []
+        frontier.append(remaining_nodes[0])
+        remaining_nodes.remove(remaining_nodes[0])
+        direction = 3
+        while len(frontier) > 0:
+            node = frontier.pop()
+            shape = []
+            shape.append(node)
+            direction = (direction+1)%4
+            neighbor, direction = node.get_next(direction)
+            while neighbor != node:
+                if neighbor in remaining_nodes: remaining_nodes.remove(neighbor)
+                shape.append(neighbor)
+                direction = (direction + 1)%4
+                neighbor2, direction = neighbor.get_next(direction)
+                next_node, next_direction = neighbor.get_next((direction-1)%4)
+                if next_node in remaining_nodes:
+                    frontier.append(next_node)
+                    remaining_nodes.remove(next_node)
+                neighbor = neighbor2
+            self.shapes.append(shape)
+    
+    def get_shapes(self):
+        self.build_shapes()
+        return self.shapes
+
     def build_graph(self):
         self.nodes = {}
         self.add_all_nodes()
@@ -31,12 +81,8 @@ class ShapeGraph():
 
     def __str__(self):
         val = ""
-        for k,v in self.nodes.items():
-            str_neighbors = ""
-            for _,neighbor in v.neighbors.items():
-                if neighbor:
-                    str_neighbors += f"({neighbor[0].row}, {neighbor[0].column})  "
-            val += f"({k[0]}, {k[1]}), neighbors are {str_neighbors} \n"
+        for _,node in self.nodes.items():
+            val += str(node) + "\n"
         return val
 
     def add_all_edges(self):
@@ -271,4 +317,7 @@ if __name__ == "__main__":
 
     s = ShapeGraph(shape)
     print(s)
-    print(s.mapp)
+    ss = s.get_shapes()
+    for each in ss:
+        print("---")
+        print([(n.row,n.column) for n in each])
